@@ -3,7 +3,7 @@ import { ArrowLeft, Send, BookmarkPlus, Download, ShieldCheck, Loader2, RefreshC
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { characters, type Room, type Workspace, type Message } from '@/lib/fuji';
+import { characters, type Room, type Workspace, type Message, getRelationship } from '@/lib/fuji';
 import { apiRequest, hasProviderKey, type Provider } from '@/lib/api';
 import { animeWorlds } from '@/components/FujiRoleplay';
 import { toast } from 'sonner';
@@ -30,7 +30,8 @@ export function FujiChat({ room, workspace, updateRoom, addMemory, back }: { roo
       const lastUserIndex = current.messages.map(m => m.role).lastIndexOf('user');
       const replied = new Set(current.messages.slice(lastUserIndex + 1).filter(m => m.role === 'assistant').map(m => m.character));
       for (const speaker of current.members.filter(id => !replied.has(id))) {
-        const result = await apiRequest<{ content: string }>('chat', { provider, members: current.members, speaker, messages, memories, world: current.world, premise: current.premise, worldDetails: current.worldDetails, maturity: workspace.maturity }, provider);
+        const rel = getRelationship(workspace, speaker);
+        const result = await apiRequest<{ content: string }>('chat', { provider, members: current.members, speaker, messages, memories, world: current.world, premise: current.premise, worldDetails: current.worldDetails, maturity: workspace.maturity, relationship: { trust: rel.trust, affection: rel.affection, tension: rel.tension, notes: rel.notes } }, provider);
         const reply: Message = { id: crypto.randomUUID(), role: 'assistant', content: result.content, time: new Date().toISOString(), character: speaker };
         const cleaned = conversationParts(reply).filter(part => !part.character || part.character === speaker).map(part => part.content).join(' ').trim();
         if (!cleaned) throw new Error('The companion returned an empty reply. Please retry.');
