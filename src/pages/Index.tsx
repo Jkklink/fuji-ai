@@ -1,19 +1,44 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { ArrowUpRight, Bell, Brain, ChevronDown, Coins, Compass, Home, Menu, MessageCircle, MessagesSquare, Mountain, Newspaper, Search, Settings, ShieldCheck, Sparkles, Swords, Users, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { characters, useWorkspace, type CharacterId } from '@/lib/fuji';
+import { Portrait } from '@/components/fuji/Portrait';
+import { Dashboard } from '@/components/fuji/Dashboard';
+import { WorkspaceViews } from '@/components/fuji/WorkspaceViews';
 
-import { MadeWithDyad } from "@/components/made-with-dyad";
-
+const mainNav = [{ page: 'home', title: 'Home', icon: Home }, { page: 'characters', title: 'Characters', icon: Compass }, { page: 'chats', title: 'My conversations', icon: MessagesSquare }];
+const exploreNav = [{ page: 'duo', title: 'Duo mode', icon: Users, badge: '2×' }, { page: 'groups', title: 'Character groups', icon: Users }, { page: 'adventure', title: 'Adventures', icon: Swords, badge: 'NEW' }, { page: 'memory', title: 'Memory', icon: Brain }, { page: 'news', title: 'News & research', icon: Newspaper }];
 const Index = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">
-          Start building your amazing project here!
-        </p>
-      </div>
-      <MadeWithDyad />
+  const { data, setData, storageError } = useWorkspace();
+  const navigateRoute = useNavigate();
+  const location = useLocation();
+  const page = location.pathname.replace(/^\//, '') || 'home';
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const navigate = (next: string) => { navigateRoute(next === 'home' ? '/' : `/${next}`); setMobileOpen(false); window.scrollTo(0, 0); };
+  const startChat = (members: CharacterId[], title?: string) => {
+    const id = crypto.randomUUID();
+    setData(d => ({ ...d, conversations: [...d.conversations, { id, title: title || `${members.map(id => characters.find(c => c.id === id)?.name).join(' & ')} · New conversation`, members: [...members], messages: [], created: new Date().toISOString() }] }));
+    navigate(`chat/${id}`);
+  };
+  const navItem = (item: { page: string; title: string; icon: typeof Home; badge?: string }) => <NavLink key={item.page} to={item.page === 'home' ? '/' : `/${item.page}`} end={item.page === 'home'} onClick={() => setMobileOpen(false)} className={({ isActive }) => `relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] font-medium transition-colors ${isActive ? 'bg-amber-400/10 text-amber-300 before:absolute before:left-0 before:h-4 before:w-0.5 before:rounded-full before:bg-amber-400' : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'}`}><item.icon size={17} strokeWidth={1.7} /><span className="flex-1">{item.title}</span>{item.badge && <span className={`rounded px-1.5 py-0.5 text-[8px] font-bold ${item.page === 'adventure' ? 'bg-amber-400/10 text-amber-300' : 'bg-secondary text-slate-300'}`}>{item.badge}</span>}</NavLink>;
+  const title = page === 'home' ? 'Overview' : page.startsWith('chat/') ? 'Conversations' : page.startsWith('adventure') ? 'Adventures' : [...mainNav, ...exploreNav, { page: 'settings', title: 'Settings' }, { page: 'coins', title: 'Coin wallet' }].find(p => p.page === page)?.title || 'Workspace';
+  return <div className={`min-h-screen ${data.reducedMotion ? 'reduce-motion' : ''}`}>
+    {mobileOpen && <button className="fixed inset-0 z-40 bg-slate-950/75 lg:hidden" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}
+    <aside className={`fixed inset-y-0 left-0 z-50 flex w-[224px] flex-col border-r border-border/60 bg-[#101524] transition-transform lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className="flex items-center gap-2.5 px-6 pb-7 pt-7"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-400/10 text-amber-300"><Mountain size={24} strokeWidth={1.8} /></div><div><span className="display-font text-xl font-extrabold tracking-tight">fuji<span className="ml-1 text-amber-300">ai</span><span className="ml-1 text-amber-400">.</span></span><p className="mt-0.5 text-[8px] tracking-[.24em] text-muted-foreground">A WORLD WITHIN REACH</p></div><button onClick={() => setMobileOpen(false)} className="ml-auto lg:hidden" aria-label="Close menu"><X size={17} /></button></div>
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3"><div><p className="fuji-label mb-2 px-3 !text-[9px]">YOUR SPACE</p>{mainNav.map(navItem)}</div><div><p className="fuji-label mb-2 px-3 !text-[9px]">COMPANIONS</p>{characters.map(c => <button key={c.id} onClick={() => startChat([c.id])} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs text-muted-foreground hover:bg-secondary/60 hover:text-foreground"><Portrait character={c} className="h-6 w-6 rounded-lg" /><span className="flex-1">{c.name}</span><span className="h-1.5 w-1.5 rounded-full opacity-80" style={{ backgroundColor: c.color }} /></button>)}</div><div><p className="fuji-label mb-2 px-3 !text-[9px]">EXPLORE</p>{exploreNav.map(navItem)}</div></nav>
+      <div className="mt-3 space-y-3 px-3 pb-4"><button onClick={() => navigate('coins')} className="flex w-full items-center gap-2.5 rounded-xl border border-amber-400/15 bg-amber-400/5 px-3 py-3 text-left"><div className="rounded-lg bg-amber-400/10 p-2 text-amber-300"><Coins size={17} /></div><div className="flex-1"><p className="text-[10px] font-semibold text-amber-200">Your coin wallet</p><p className="mt-0.5 text-[9px] text-muted-foreground">Connect to get started</p></div><ArrowUpRight size={13} className="text-amber-300" /></button>{navItem({ page: 'settings', title: 'Settings', icon: Settings })}<button onClick={() => navigate('settings')} className="flex w-full items-center gap-2.5 border-t border-border/70 px-2 pt-4 text-left"><div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 text-sm font-semibold text-cyan-200">{data.name.charAt(0).toUpperCase() || 'T'}</div><div className="min-w-0 flex-1"><p className="truncate text-[11px] font-semibold">{data.name || 'Traveler'}</p><p className="mt-0.5 text-[9px] text-muted-foreground">Local workspace</p></div><ChevronDown size={13} className="text-muted-foreground" /></button></div>
+    </aside>
+    <div className="lg:pl-[224px]"><header className="flex h-[72px] items-center justify-between gap-3 border-b border-border/60 px-5 md:px-8 xl:px-10"><div className="flex items-center gap-3"><button className="rounded-lg p-1 lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open menu"><Menu size={21} /></button><div className="flex items-center gap-2 text-[11px]"><Mountain size={14} className="text-muted-foreground" /><span className="text-muted-foreground">Workspace</span><span className="text-slate-600">/</span><span>{title}</span></div></div><div className="flex items-center gap-4"><button onClick={() => setSearchOpen(true)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground" aria-label="Search workspace"><Search size={16} /><span className="hidden text-[11px] md:block">Search anything…</span><span className="hidden rounded border border-border px-1.5 py-0.5 text-[9px] xl:block">Search</span></button><span className="hidden h-5 w-px bg-border sm:block" /><button onClick={() => setNoticeOpen(true)} className="relative rounded-lg p-1 text-muted-foreground hover:text-amber-300" aria-label="Connection notices"><Bell size={17} /><span className="absolute right-1 top-0.5 h-1 w-1 rounded-full bg-amber-400" /></button><button onClick={() => navigate('settings')} className="flex h-8 w-8 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-400/10 text-[11px] font-semibold text-cyan-200" aria-label="Profile settings">{data.name.charAt(0).toUpperCase() || 'T'}</button></div></header>
+      <main className="mx-auto max-w-[1540px] px-5 py-7 md:px-8 xl:px-10">{storageError && <div role="alert" className="mb-5 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-xs text-red-200">Browser storage is unavailable or full. Recent changes are only in memory—export your workspace in Settings before leaving.</div>}{page === 'home' ? <Dashboard data={data} navigate={navigate} startChat={startChat} favorite={id => setData(d => ({ ...d, favorites: d.favorites.includes(id) ? d.favorites.filter(x => x !== id) : [...d.favorites, id] }))} /> : <WorkspaceViews key={page} page={page} data={data} setData={setData} navigate={navigate} startChat={startChat} />}</main>
     </div>
-  );
+    <Dialog open={searchOpen} onOpenChange={setSearchOpen}><DialogContent className="rounded-2xl"><DialogHeader><DialogTitle>Find your next chapter</DialogTitle><DialogDescription>Search companions, pages, and your saved conversations.</DialogDescription></DialogHeader><input autoFocus aria-label="Search workspace" className="fuji-input" placeholder="Try Yuki, memories, or a conversation…" value={search} onChange={e => setSearch(e.target.value)} /><div className="max-h-80 space-y-1 overflow-y-auto">{[...mainNav, ...exploreNav, ...characters.map(c => ({ page: c.id, title: c.name })), ...data.conversations.map(c => ({ page: `chat/${c.id}`, title: c.title }))].filter(item => item.title.toLowerCase().includes(search.toLowerCase())).map(item => <button key={item.page} className="flex w-full items-center justify-between rounded-xl p-3 text-left text-sm hover:bg-secondary" onClick={() => { setSearchOpen(false); const c = characters.find(c => c.id === item.page); if (c) startChat([c.id]); else navigate(item.page); }}>{item.title}<ArrowUpRight size={14} className="text-muted-foreground" /></button>)}</div></DialogContent></Dialog>
+    <Dialog open={noticeOpen} onOpenChange={setNoticeOpen}><DialogContent className="rounded-2xl"><DialogHeader><DialogTitle className="flex items-center gap-2"><ShieldCheck className="text-cyan-300" size={20} /> Your connection status</DialogTitle><DialogDescription>You're exploring Fuji AI in local workspace mode.</DialogDescription></DialogHeader><p className="text-sm leading-relaxed text-muted-foreground">Your notes are stored on this device. Accounts, cloud sync, live AI responses, news integrations, and coin transactions aren't connected yet. No exposed credentials or destructive migrations have been used.</p><Button className="fuji-primary" onClick={() => { setNoticeOpen(false); navigate('settings'); }}>Open settings</Button></DialogContent></Dialog>
+  </div>;
 };
-
 export default Index;
