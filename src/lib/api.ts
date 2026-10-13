@@ -66,6 +66,14 @@ export function getProviderKeyCount(provider: KeyProvider): number {
   return keys[provider]?.length ?? 0;
 }
 
+export function pickAvailableProvider(): Provider | undefined {
+  const order: Provider[] = ['openrouter', 'groq', 'mistral'];
+  for (const p of order) {
+    if (hasProviderKey(p)) return p;
+  }
+  return undefined;
+}
+
 export async function apiRequest<T>(path: string, body: unknown, provider: KeyProvider): Promise<T> {
   const key = getActiveProviderKey(provider);
   if (!key) throw new Error(`Add your ${provider} API key in Settings first.`);

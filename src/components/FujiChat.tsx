@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { characters, type Room, type Workspace, type Message, getRelationship } from '@/lib/fuji';
-import { apiRequest, hasProviderKey, type Provider } from '@/lib/api';
+import { apiRequest, hasProviderKey, pickAvailableProvider, type Provider } from '@/lib/api';
 import { animeWorlds } from '@/components/FujiRoleplay';
 import { toast } from 'sonner';
 import { conversationParts } from '@/lib/chat-text';
 export function FujiChat({ room, workspace, updateRoom, addMemory, back }: { room: Room; workspace: Workspace; updateRoom: (room: Room) => void; addMemory: (text: string) => void; back: () => void }) {
   const [draft, setDraft] = useState('');
-  const [provider, setProvider] = useState<Provider>('openrouter');
+  const [provider, setProvider] = useState<Provider>(pickAvailableProvider() ?? 'openrouter');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [destination, setDestination] = useState('');
