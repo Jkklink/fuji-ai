@@ -3,12 +3,11 @@ import { createError } from 'nitro/h3';
 import { z } from 'zod';
 import { jsonBody, requireAccess } from '../../utils/access';
 export default defineHandler(async event => {
-  const config = requireAccess(event.req, true);
+  const config = requireAccess(event.req);
   const parsed = z.object({ query: z.string().trim().min(2).max(400), topic: z.enum(['general', 'news']) }).safeParse(await jsonBody(event.req));
   if (!parsed.success) throw createError({ statusCode: 400, statusMessage: 'Enter a research query of 2–400 characters.' });
-  if (!config.tavilyApiKey) throw createError({ statusCode: 503, statusMessage: 'Tavily needs a new server-side API key.' });
   let response: Response;
-  try { response = await fetch('https://api.tavily.com/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ api_key: config.tavilyApiKey, query: parsed.data.query, topic: parsed.data.topic, search_depth: 'basic', max_results: 5, include_answer: true }), signal: AbortSignal.timeout(30_000) }); }
+  try { response = await fetch('https://api.tavily.com/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ api_key: config.key, query: parsed.data.query, topic: parsed.data.topic, search_depth: 'basic', max_results: 5, include_answer: true }), signal: AbortSignal.timeout(30_000) }); }
   catch { throw createError({ statusCode: 504, statusMessage: 'Search timed out. Try again.' }); }
   if (!response.ok) throw createError({ statusCode: 502, statusMessage: 'Search provider rejected the request. Check its key and quota.' });
   const data = await response.json();

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { characters, type Room, type Workspace, type Message } from '@/lib/fuji';
-import { apiRequest, hasAccess, type Provider } from '@/lib/api';
+import { apiRequest, hasProviderKey, type Provider } from '@/lib/api';
 import { animeWorlds } from '@/components/FujiRoleplay';
 import { toast } from 'sonner';
 export function FujiChat({ room, workspace, updateRoom, addMemory, back }: { room: Room; workspace: Workspace; updateRoom: (room: Room) => void; addMemory: (text: string) => void; back: () => void }) {
@@ -25,7 +25,7 @@ export function FujiChat({ room, workspace, updateRoom, addMemory, back }: { roo
       const messages = current.messages.filter(m => m.role !== 'preview').slice(-30).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
       while (messages.length > 1 && JSON.stringify(messages).length > 55000) messages.shift();
       const memories = workspace.memories.filter(m => m.character === 'all' || current.members.includes(m.character)).slice(0, 10).map(m => m.text.slice(0, 3000));
-      const result = await apiRequest<{ content: string }>('chat', { provider, members: current.members, messages, memories, world: current.world, premise: current.premise });
+      const result = await apiRequest<{ content: string }>('chat', { provider, members: current.members, messages, memories, world: current.world, premise: current.premise }, provider);
       updateRoom({ ...current, updated: new Date().toISOString(), messages: [...current.messages, { id: crypto.randomUUID(), role: 'assistant', content: result.content, time: new Date().toISOString(), character: current.members.length === 1 ? current.members[0] : undefined }] });
     } catch (e) { if (mounted.current) setError((e as Error).message); }
     finally { pending.current = false; if (mounted.current) setBusy(false); }
@@ -36,7 +36,7 @@ export function FujiChat({ room, workspace, updateRoom, addMemory, back }: { roo
     const current = { ...room, ...(nextWorld ? { world: nextWorld, worlds: [...(room.worlds || [room.world!]), nextWorld] } : {}), updated: new Date().toISOString(), messages: [...room.messages, message] };
     updateRoom(current); setDraft('');
     if (nextWorld) setDestination('');
-    if (!hasAccess()) { setError('Message saved locally. Unlock server access in Settings for live replies.'); return; }
+    if (!hasProviderKey(provider)) { setError('Message saved locally. Add a key for the selected provider in Settings for live replies.'); return; }
     await requestReply(current);
   };
   const exportChat = () => {
@@ -46,7 +46,7 @@ export function FujiChat({ room, workspace, updateRoom, addMemory, back }: { roo
   return <section className="panel relative flex min-h-[600px] flex-col overflow-hidden">
     {workspace.wallpaper && <><img src="/assets/chat-wallpaper.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" /><div className="absolute inset-0 bg-[#10182a]/50" /></>}
     <header className="relative flex flex-wrap items-center gap-3 border-b border-white/10 bg-[#10182a]/80 p-4"><button onClick={back} aria-label="Back to conversations" className="p-2 text-slate-400"><ArrowLeft size={18} /></button><div className="flex -space-x-2">{room.members.map(id => <img key={id} src={`/assets/${id}.png`} alt={id} className="h-9 w-9 rounded-full border-2 border-[#10182a] object-cover" />)}</div><div className="min-w-0 flex-1"><h2 className="truncate text-sm font-semibold">{room.title}</h2><p className="mt-1 text-[10px] capitalize text-cyan-300">{room.kind} · Saved on this browser</p></div><select aria-label="AI provider" value={provider} disabled={busy} onChange={e => setProvider(e.target.value as Provider)} className="field rounded-lg p-2 text-xs"><option value="openrouter">OpenRouter</option><option value="mistral">Mistral</option><option value="groq">Groq</option></select><button onClick={exportChat} aria-label="Export conversation" className="p-2 text-slate-400 hover:text-amber-300"><Download size={18} /></button></header>
-    <div className="relative mx-4 mt-4 flex items-start gap-2 rounded-xl border border-amber-400/15 bg-[#172034]/90 p-3 text-[11px] leading-5 text-amber-200"><ShieldCheck size={16} className="mt-0.5 shrink-0" /> {hasAccess() ? 'Server access unlocked. Messages and relevant journal memories are sent to the selected AI provider when you request a reply.' : 'Unlock server access in Settings for AI replies. You can still save messages locally.'} Browser storage is not an authenticated private account.</div>
+    <div className="relative mx-4 mt-4 flex items-start gap-2 rounded-xl border border-amber-400/15 bg-[#172034]/90 p-3 text-[11px] leading-5 text-amber-200"><ShieldCheck size={16} className="mt-0.5 shrink-0" /> {hasProviderKey(provider) ? 'Your session key is ready. Messages and relevant journal memories are sent through the server to the selected AI provider when you request a reply.' : 'Add your API key in Settings for this provider. No access password is required. You can still save messages locally.'} Browser storage is not an authenticated private account.</div>
     {room.kind === 'roleplay' && <div className="relative mx-4 mt-3 rounded-xl border border-cyan-300/15 bg-[#10182a]/90 p-4"><p className="flex items-center gap-2 text-xs text-cyan-300"><Globe size={15} /> Current world: {room.world}</p><p className="mt-2 text-[10px] text-slate-400">Journey: {room.worlds?.join(' → ')}</p><form onSubmit={e => { e.preventDefault(); if (destination.trim()) send(`Our party enters a portal to ${destination.trim()}. Continue our journey in this new world, preserving our shared story and companions.`, destination.trim()); }} className="mt-3 flex flex-wrap gap-2"><Input aria-label="Next anime world" list="portal-worlds" className="field min-w-0 flex-1 text-xs" maxLength={200} placeholder="Next anime world or custom destination…" value={destination} disabled={busy} onChange={e => setDestination(e.target.value)} /><datalist id="portal-worlds">{animeWorlds.map(w => <option key={w} value={w} />)}</datalist><Button disabled={busy || !destination.trim()} className="amber-button text-xs">Enter portal</Button></form></div>}
     <div className="relative flex max-h-[480px] min-h-52 flex-1 flex-col gap-5 overflow-y-auto p-5">
       {!room.messages.length && <div className="py-10 text-center"><Globe size={30} className="mx-auto text-cyan-300" /><h3 className="mt-4 font-display text-2xl">Your party is ready.</h3><p className="mt-2 text-xs text-slate-400">Begin the scene, or describe your first action below.</p><Button disabled={busy} onClick={() => send(`Begin our journey in ${room.world}. ${room.premise || ''} Introduce the scene and our selected companions, then let me choose my first action.`)} className="amber-button mt-5 gap-2"><Play size={14} /> Begin the scene</Button></div>}

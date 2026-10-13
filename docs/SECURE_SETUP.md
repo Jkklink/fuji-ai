@@ -1,36 +1,29 @@
-# Fuji AI single-user server setup
+# Fuji AI bring-your-own-key mode
 
-The app uses Nitro server routes. Supabase and Neon are not required. Saves remain in browser localStorage; the access password is not an account and does not isolate multiple users' browser data.
+## Use the app
 
-## Configure secrets
+There is no access-password gate. Open Settings and enter a newly rotated OpenRouter, Mistral, Groq, or Tavily API key in its own field. Select your AI provider in the chat header. Tavily powers News & Research.
 
-Revoke all provider keys previously pasted in chat. Set new keys using your hosting provider's private environment-variable controls. Do not paste secrets into source files, chat, frontend settings, or variables prefixed with `VITE_`.
+Keys are held only in frontend module memory for the current page session. They clear on refresh and are not written to localStorage, workspace JSON, source files, or server files. Added means a key has been entered, not that it has been verified. An actual chat/search request verifies provider access and quota.
 
-| Variable | Purpose |
-| --- | --- |
-| `NITRO_ACCESS_PASSWORD` | A unique random password, 16–256 characters; required for all API endpoints |
-| `NITRO_OPENROUTER_API_KEY` | Rotated OpenRouter key |
-| `NITRO_OPENROUTER_MODEL` | Model available to your account; default `openai/gpt-4o-mini` |
-| `NITRO_MISTRAL_API_KEY` | Rotated Mistral key |
-| `NITRO_MISTRAL_MODEL` | Default `mistral-small-latest` |
-| `NITRO_GROQ_API_KEY` | Rotated Groq key |
-| `NITRO_GROQ_MODEL` | Default `llama-3.3-70b-versatile` |
-| `NITRO_TAVILY_API_KEY` | Rotated Tavily key for general and news searches |
+Requests send the selected key in an Authorization header to the Nitro server, which forwards it only to the fixed selected provider endpoint. No shared server-side provider keys or fallback credentials are used. API routes do not log keys or relay provider error bodies. Your provider may charge for requests. This is not a zero-knowledge system: the trusted app server receives your key transiently. Use HTTPS and a deployment you trust, and ensure infrastructure request logging redacts Authorization headers.
 
-Set only the providers you want. Check current model availability in the provider dashboard. FreeNews is not wired because its exact service URL and authentication specification were not supplied. Tavily supports news search.
+Revoke keys previously pasted in chat. Do not paste replacement keys into chat. Enter them only in the app’s API key fields.
 
-After configuring environment variables, the hosting server must reload them. In Fuji AI Settings, enter only your server access password. Provider availability flags indicate configured keys, not a successful upstream connection. Send a chat or search to verify upstream service access. Select the AI provider in the chat header. No automatic provider fallback incurs surprise calls.
+## Server deployment
 
-## Deployment and protection
+Deploy Nitro server output to a Node-compatible host, not just static Vite assets. Do not rewrite `/api/*` to the SPA. No NITRO_ACCESS_PASSWORD is needed. Optional server model settings:
 
-Deploy the Nitro server output to a Node-compatible host, not only the static Vite assets. Use HTTPS. Do not apply an SPA-only rewrite to `/api/*`. API keys and prompts are not logged by these routes, and provider error bodies are not passed to the browser.
+- NITRO_OPENROUTER_MODEL (default openai/gpt-4o-mini)
+- NITRO_MISTRAL_MODEL (default mistral-small-latest)
+- NITRO_GROQ_MODEL (default llama-3.3-70b-versatile)
 
-The password is held only in frontend memory and clears on page refresh. Every paid request checks it server-side. The server limits paid requests to 20/minute and total access attempts to 90/minute per server instance. These are in-memory, per-instance limits, not durable or distributed quotas. For a public or multi-instance deployment, add gateway rate limits and provider spending caps. This single-user design is not a substitute for multi-user authentication, a database ledger, or per-user ownership isolation.
+Confirm model availability with your provider. A server reload is needed after changing environment values. API rate limiting is in-memory and per instance: 60 requests/minute. For public deployments use gateway rate limits. Every caller must supply their own key; the proxy cannot spend shared server credentials.
 
-AI receives the last 30 messages plus at most 10 relevant memories. Roleplay requests also include the current world and scenario. Tavily receives the search query. Avoid sharing sensitive data; provider privacy and content policies apply. Responses are rendered as plain text, and search links allow HTTP/HTTPS only.
+FreeNewsAPI is pending the exact documentation URL; lookup permission was denied. No unverified endpoint is called. Tavily provides news search meanwhile.
 
-## Roleplay
+## Privacy and roleplay
 
-Open Group Roleplay, select one to all four available companions, choose or type a destination world, and create a journey. Begin the scene or write an action. Use Enter portal in the chat to visit a different world while retaining party and message history. Previous local chats and authored adventures are preserved. No fake AI replies are generated if configuration is missing.
+Chats, journals, and journeys remain in this browser’s localStorage, not an authenticated private account. AI requests include bounded recent history and up to 10 relevant memories. Roleplay includes the current world and scenario. Tavily receives your query. Provider privacy and safety policies apply.
 
-Accounts, cloud sync, purchases and coin balances remain unavailable. Local JSON exports contain workspace data, never server secrets.
+Group Roleplay supports one to all four companions and custom destinations. Enter portal retains the party and saved story. Accounts, cloud saves and coin purchases remain unavailable without a database. Workspace and chat exports never include session keys.
