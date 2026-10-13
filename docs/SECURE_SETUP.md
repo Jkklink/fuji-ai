@@ -2,9 +2,9 @@
 
 ## Use the app
 
-There is no access-password gate. Open Settings and enter a newly rotated OpenRouter, Mistral, Groq, or Tavily API key in its own field. Select your AI provider in the chat header. Tavily powers News & Research.
+There is no access-password gate. Open Settings and you can add multiple API keys for each provider (OpenRouter, Mistral, Groq, Tavily). For each provider, you can select which key to use for requests. Select your AI provider in the chat header. Tavily powers News & Research.
 
-Keys are held only in frontend module memory for the current page session. They clear on refresh and are not written to localStorage, workspace JSON, source files, or server files. Added means a key has been entered, not that it has been verified. An actual chat/search request verifies provider access and quota.
+Keys are held only in frontend module memory for the current page session. They clear on refresh and are not written to localStorage, workspace JSON, source files, or server files. “Added” means a key has been entered, not that it has been verified. An actual chat/search request verifies provider access and quota.
 
 Requests send the selected key in an Authorization header to the Nitro server, which forwards it only to the fixed selected provider endpoint. No shared server-side provider keys or fallback credentials are used. API routes do not log keys or relay provider error bodies. Your provider may charge for requests. This is not a zero-knowledge system: the trusted app server receives your key transiently. Use HTTPS and a deployment you trust, and ensure infrastructure request logging redacts Authorization headers.
 
