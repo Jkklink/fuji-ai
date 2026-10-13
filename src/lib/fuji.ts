@@ -5,8 +5,8 @@ export const characters = [
   { id: 'kakashi' as CharacterId, name: 'Kakashi', role: 'Your calm, perceptive mentor', tagline: 'Less noise. More clarity.', description: 'A composed mentor with dry humor, practical advice, and a protective instinct.', color: '#b7bed5', greeting: "you're here. good. what are we working through?", tags: ['Wise', 'Grounded'], label: 'THE QUIET MENTOR' },
   { id: 'yuno' as CharacterId, name: 'Yuno', role: 'Your partner in becoming', tagline: 'Small steps. Unshakable ambition.', description: 'A focused rival-mentor who turns ambition into clear next steps and lets effort speak for itself.', color: '#79d5ad', greeting: "ready to take the next step? let's make it count.", tags: ['Focused', 'Determined'], label: 'THE STEADY RIVAL' },
 ];
-export type Message = { id: string; role: 'user' | 'preview'; content: string; character?: CharacterId; time: string };
-export type Room = { id: string; title: string; kind: 'private' | 'duo' | 'group'; members: CharacterId[]; messages: Message[]; updated: string };
+export type Message = { id: string; role: 'user' | 'preview' | 'assistant'; content: string; character?: CharacterId; time: string };
+export type Room = { id: string; title: string; kind: 'private' | 'duo' | 'group' | 'roleplay'; members: CharacterId[]; messages: Message[]; updated: string; world?: string; premise?: string; worlds?: string[] };
 export type Memory = { id: string; text: string; character: CharacterId | 'all'; created: string };
 export type Adventure = { id: string; title: string; companion: CharacterId; step: number; path: string[]; updated: string };
 export type Research = { id: string; title: string; url: string; note: string };
