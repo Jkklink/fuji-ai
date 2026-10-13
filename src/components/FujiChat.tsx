@@ -30,7 +30,7 @@ export function FujiChat({ room, workspace, updateRoom, addMemory, back }: { roo
       const lastUserIndex = current.messages.map(m => m.role).lastIndexOf('user');
       const replied = new Set(current.messages.slice(lastUserIndex + 1).filter(m => m.role === 'assistant').map(m => m.character));
       for (const speaker of current.members.filter(id => !replied.has(id))) {
-        const result = await apiRequest<{ content: string }>('chat', { provider, members: current.members, speaker, messages, memories, world: current.world, premise: current.premise, worldDetails: current.worldDetails }, provider);
+        const result = await apiRequest<{ content: string }>('chat', { provider, members: current.members, speaker, messages, memories, world: current.world, premise: current.premise, worldDetails: current.worldDetails, maturity: workspace.maturity }, provider);
         const reply: Message = { id: crypto.randomUUID(), role: 'assistant', content: result.content, time: new Date().toISOString(), character: speaker };
         const cleaned = conversationParts(reply).filter(part => !part.character || part.character === speaker).map(part => part.content).join(' ').trim();
         if (!cleaned) throw new Error('The companion returned an empty reply. Please retry.');

@@ -1,3 +1,4 @@
+import type { MaturityMode } from './maturity';
 export type CharacterId = 'sanji' | 'yuki' | 'kakashi' | 'yuno';
 export const characters = [
   { id: 'sanji' as CharacterId, name: 'Sanji', role: 'Your everyday confidant', tagline: 'Warm, witty & always in your corner', description: 'A thoughtful companion who brings warmth, humor, and honest encouragement to every conversation.', color: '#f5b646', greeting: "hey, you're back. how's it going today?", tags: ['Supportive', 'Witty'], label: 'THE WARM SOUL' },
@@ -10,8 +11,8 @@ export type Room = { id: string; title: string; kind: 'private' | 'duo' | 'group
 export type Memory = { id: string; text: string; character: CharacterId | 'all'; created: string };
 export type Adventure = { id: string; title: string; companion: CharacterId; step: number; path: string[]; updated: string };
 export type Research = { id: string; title: string; url: string; note: string };
-export type Workspace = { name: string; rooms: Room[]; memories: Memory[]; adventures: Adventure[]; research: Research[]; wallpaper: boolean };
-export const emptyWorkspace: Workspace = { name: 'Traveler', rooms: [], memories: [], adventures: [], research: [], wallpaper: true };
+export type Workspace = { name: string; rooms: Room[]; memories: Memory[]; adventures: Adventure[]; research: Research[]; wallpaper: boolean; maturity: MaturityMode };
+export const emptyWorkspace: Workspace = { name: 'Traveler', rooms: [], memories: [], adventures: [], research: [], wallpaper: true, maturity: 'sfw' };
 export function downloadWorkspace(workspace: Workspace) {
   const blob = new Blob([JSON.stringify({ format: 'fuji-local-workspace', version: 1, exportedAt: new Date().toISOString(), workspace }, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
