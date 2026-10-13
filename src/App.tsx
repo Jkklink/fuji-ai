@@ -16,17 +16,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/characters" element={<Index />} />
-          <Route path="/chats" element={<Index />} />
-          <Route path="/chat/:id" element={<Index />} />
-          <Route path="/duo" element={<Index />} />
-          <Route path="/groups" element={<Index />} />
-          <Route path="/memory" element={<Index />} />
-          <Route path="/adventure" element={<Index />} />
-          <Route path="/adventure/:id" element={<Index />} />
-          <Route path="/news" element={<Index />} />
-          <Route path="/coins" element={<Index />} />
-          <Route path="/settings" element={<Index />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
