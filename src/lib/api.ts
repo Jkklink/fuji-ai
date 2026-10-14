@@ -1,4 +1,4 @@
-export type Provider = 'openrouter' | 'mistral' | 'groq';
+export type Provider = 'openrouter' | 'mistral' | 'groq' | 'gpt-oss';
 export type KeyProvider = Provider | 'tavily';
 
 const keys: Partial<Record<KeyProvider, string[]>> = {};
