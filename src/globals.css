@@ -6,25 +6,25 @@
 @layer base {
   :root {
     color-scheme: dark;
-    --background: 222 43% 9%;
-    --foreground: 220 33% 94%;
-    --card: 222 37% 12%;
+    --background: 220 54% 7%;
+    --foreground: 220 33% 96%;
+    --card: 221 44% 12%;
     --card-foreground: 220 33% 94%;
-    --popover: 220 39% 16%;
+    --popover: 221 44% 16%;
     --popover-foreground: 220 33% 94%;
-    --primary: 38 92% 50%;
+    --primary: 39 96% 61%;
     --primary-foreground: 222 43% 9%;
-    --secondary: 222 30% 18%;
+    --secondary: 211 42% 19%;
     --secondary-foreground: 220 33% 94%;
     --muted: 222 30% 18%;
     --muted-foreground: 218 18% 65%;
-    --accent: 222 30% 20%;
+    --accent: 198 45% 20%;
     --accent-foreground: 220 33% 94%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 222 25% 22%;
-    --input: 222 25% 22%;
-    --ring: 38 92% 50%;
+    --border: 210 30% 24%;
+    --input: 210 30% 24%;
+    --ring: 39 96% 61%;
     --radius: 0.85rem;
     --sidebar-background: 222 40% 11%;
     --sidebar-foreground: 220 33% 94%;
@@ -45,9 +45,13 @@
 }
 @layer components {
   .font-display { font-family: 'Outfit', sans-serif; }
-  .panel { @apply rounded-2xl border border-white/[.07] bg-[#131d30]; }
-  .amber-button { @apply rounded-xl bg-amber-400 font-semibold text-[#172034] shadow-none hover:bg-amber-300 disabled:opacity-40; }
-  .field { @apply border-white/10 bg-[#0f182a] text-slate-100 placeholder:text-slate-500 focus-visible:ring-amber-400/40; }
+  .panel { @apply rounded-2xl border border-white/[.08] bg-[#0e2039]; }
+  .journey-shell { background: radial-gradient(circle at 82% 2%, rgba(29, 126, 165, .18), transparent 28rem), linear-gradient(145deg, #061329 0%, #081b35 54%, #07152b 100%); }
+  .journey-header { box-shadow: 0 12px 40px rgba(3, 12, 28, .24); }
+  .journey-mark { @apply flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-200/25 bg-cyan-300/10 text-cyan-200; }
+  .journey-empty { background: linear-gradient(145deg, rgba(14, 32, 57, .96), rgba(8, 25, 49, .96)); }
+  .amber-button { @apply rounded-xl bg-amber-300 font-semibold text-[#172034] shadow-[0_8px_24px_rgba(245,158,11,.12)] hover:bg-amber-200 disabled:opacity-40; }
+  .field { @apply border-white/10 bg-[#091a32] text-slate-100 placeholder:text-slate-500 focus-visible:ring-cyan-300/40; }
   .nav-item { @apply flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-xs text-slate-400 transition-colors hover:bg-white/[.04] hover:text-slate-200; }
   .nav-active { @apply bg-amber-400/[.08] text-amber-300 hover:bg-amber-400/[.08] hover:text-amber-300; }
   .eyebrow { @apply text-[9px] font-medium tracking-[.18em] text-slate-400; }
