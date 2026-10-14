@@ -48,8 +48,13 @@
   .panel { @apply rounded-2xl border border-white/[.08] bg-[#0e2039]; }
   .journey-shell { background: radial-gradient(circle at 82% 2%, rgba(29, 126, 165, .18), transparent 28rem), linear-gradient(145deg, #061329 0%, #081b35 54%, #07152b 100%); }
   .journey-header { box-shadow: 0 12px 40px rgba(3, 12, 28, .24); }
+  .journey-wallpaper { opacity: .34; filter: saturate(.85) contrast(1.08); }
+  .journey-atmosphere { background: linear-gradient(180deg, rgba(5, 16, 35, .48), rgba(5, 18, 38, .82) 42%, #061329 100%); }
+  .journey-mission-card { box-shadow: 0 24px 80px rgba(2, 12, 28, .32); backdrop-filter: blur(2px); }
   .journey-mark { @apply flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-200/25 bg-cyan-300/10 text-cyan-200; }
   .journey-empty { background: linear-gradient(145deg, rgba(14, 32, 57, .96), rgba(8, 25, 49, .96)); }
+  .journey-world-card { background: rgba(9, 27, 52, .72); transition: transform .2s ease, border-color .2s ease, background .2s ease; }
+  .journey-world-card:hover { transform: translateY(-2px); background: rgba(17, 48, 78, .82); }
   .amber-button { @apply rounded-xl bg-amber-300 font-semibold text-[#172034] shadow-[0_8px_24px_rgba(245,158,11,.12)] hover:bg-amber-200 disabled:opacity-40; }
   .field { @apply border-white/10 bg-[#091a32] text-slate-100 placeholder:text-slate-500 focus-visible:ring-cyan-300/40; }
   .nav-item { @apply flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-xs text-slate-400 transition-colors hover:bg-white/[.04] hover:text-slate-200; }
