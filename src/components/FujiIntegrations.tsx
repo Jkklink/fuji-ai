@@ -154,12 +154,9 @@ export function FujiIntegrations() {
         Your API keys · No access password
       </h2>
       <p className="mt-3 text-sm leading-6 text-slate-300">
-        Add keys for each provider below. Select which key to use. Choose an AI provider in chat, or use Tavily in News &amp; Research.
+        Add your Google AI (Gemini) API key for chat, and your Tavily key for news and research search. Get a free Gemini key at aistudio.google.com.
       </p>
       <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <ProviderKeyManager provider="openrouter" label="OpenRouter" />
-        <ProviderKeyManager provider="mistral" label="Mistral" />
-        <ProviderKeyManager provider="groq" label="Groq" />
         <ProviderKeyManager provider="google" label="Google · Gemini" />
         <ProviderKeyManager provider="tavily" label="Tavily · Research & news" />
       </div>
