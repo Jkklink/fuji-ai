@@ -3,11 +3,38 @@ import { ArrowLeft, Send, BookmarkPlus, Download, ShieldCheck, Loader2, RefreshC
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { characters, type Room, type Workspace, type Message, getRelationship } from '@/lib/fuji';
+import { characters, type CharacterId, type Room, type Workspace, type Message, getRelationship } from '@/lib/fuji';
 import { apiRequest, hasProviderKey, pickAvailableProvider, type Provider } from '@/lib/api';
 import { animeWorlds } from '@/components/FujiRoleplay';
 import { toast } from 'sonner';
 import { conversationParts } from '@/lib/chat-text';
+
+const SILENCE_MARKERS = /^\s*(\(?\s*(silence|stays? silent|says? nothing|no response|remain[s]? silent|quiet)\s*\)?\.?\s*)$/i;
+
+function pickSpeakers(room: Room, lastUserContent: string): CharacterId[] {
+  const members = room.members;
+  if (members.length <= 1) return members;
+
+  const addressed = members.filter(id => {
+    const char = characters.find(c => c.id === id);
+    return char && new RegExp(`\\b${char.name}\\b`, 'i').test(lastUserContent);
+  });
+  if (addressed.length > 0) return addressed;
+
+  const recent = room.messages.filter(m => m.role !== 'preview').slice(-6);
+  const lastAssistant = [...recent].reverse().find(m => m.role === 'assistant');
+  const lastSpeaker = lastAssistant?.character;
+  const otherMembers = members.filter(id => id !== lastSpeaker);
+
+  if (room.kind === 'roleplay' && otherMembers.length > 0) {
+    const recentAssistantCount = recent.filter(m => m.role === 'assistant').length;
+    const recentUserCount = recent.filter(m => m.role === 'user').length;
+    if (recentAssistantCount >= 2 && recentUserCount >= 1) return [];
+  }
+
+  if (lastSpeaker && otherMembers.length > 0 && Math.random() < 0.65) return [lastSpeaker];
+  return members.slice(0, 1);
+}
 export function FujiChat({ room, workspace, updateRoom, addMemory, back }: { room: Room; workspace: Workspace; updateRoom: (room: Room) => void; addMemory: (text: string) => void; back: () => void }) {
   const [draft, setDraft] = useState('');
   const [provider, setProvider] = useState<Provider>(pickAvailableProvider() ?? 'openrouter');
@@ -26,15 +53,25 @@ export function FujiChat({ room, workspace, updateRoom, addMemory, back }: { roo
       const messages = current.messages.filter(m => m.role !== 'preview').slice(-30).map(m => ({ role: m.role as 'user' | 'assistant', content: m.character && m.role === 'assistant' ? `${m.character}: ${m.content}` : m.content }));
       while (messages.length > 1 && JSON.stringify(messages).length > 55000) messages.shift();
       const memories = workspace.memories.filter(m => m.character === 'all' || current.members.includes(m.character)).slice(0, 10).map(m => m.text.slice(0, 3000));
-      let updated = current;
+      const lastUserMessage = [...current.messages].reverse().find(m => m.role === 'user');
+      const lastUserContent = lastUserMessage?.content ?? '';
       const lastUserIndex = current.messages.map(m => m.role).lastIndexOf('user');
       const replied = new Set(current.messages.slice(lastUserIndex + 1).filter(m => m.role === 'assistant').map(m => m.character));
-      for (const speaker of current.members.filter(id => !replied.has(id))) {
+      const candidates = current.members.filter(id => !replied.has(id));
+      const speakers = pickSpeakers(current, lastUserContent).filter(id => candidates.includes(id));
+      if (speakers.length === 0 && candidates.length > 0) {
+        const lastAssistant = [...current.messages].reverse().find(m => m.role === 'assistant');
+        speakers.length = 0;
+        const fallback = lastAssistant?.character && candidates.includes(lastAssistant.character) ? lastAssistant.character : candidates[0];
+        if (fallback) speakers.push(fallback);
+      }
+      let updated = current;
+      for (const speaker of speakers) {
         const rel = getRelationship(workspace, speaker);
         const result = await apiRequest<{ content: string }>('chat', { provider, members: current.members, speaker, messages, memories, world: current.world, premise: current.premise, worldDetails: current.worldDetails, maturity: workspace.maturity, relationship: { trust: rel.trust, affection: rel.affection, tension: rel.tension, notes: rel.notes } }, provider);
         const reply: Message = { id: crypto.randomUUID(), role: 'assistant', content: result.content, time: new Date().toISOString(), character: speaker };
         const cleaned = conversationParts(reply).filter(part => !part.character || part.character === speaker).map(part => part.content).join(' ').trim();
-        if (!cleaned) throw new Error('The companion returned an empty reply. Please retry.');
+        if (!cleaned || SILENCE_MARKERS.test(cleaned)) continue;
         updated = { ...updated, updated: new Date().toISOString(), messages: [...updated.messages, { ...reply, content: cleaned }] };
         updateRoom(updated);
         messages.push({ role: 'assistant', content: `${speaker}: ${cleaned}` });
