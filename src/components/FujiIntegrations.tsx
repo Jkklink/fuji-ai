@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 function ProviderKeyManager({ provider, label }: { provider: KeyProvider; label: string }) {
   const [draft, setDraft] = useState('');
   const [error, setError] = useState('');
+  const [, forceRender] = useState(0);
 
   const handleAddKey = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,10 +38,22 @@ function ProviderKeyManager({ provider, label }: { provider: KeyProvider; label:
 
   const handleRemoveKey = (index: number) => {
     removeProviderKey(provider, index);
+    forceRender(n => n + 1);
+    toast.success('Key removed');
   };
 
   const handleSetActive = (index: number) => {
     setActiveProviderKey(provider, index);
+    forceRender(n => n + 1);
+  };
+
+  const handleClearAll = () => {
+    const count = getProviderKeyCount(provider);
+    for (let i = count - 1; i >= 0; i--) removeProviderKey(provider, i);
+    setDraft('');
+    setError('');
+    forceRender(n => n + 1);
+    if (count > 0) toast.success(`${label} keys cleared`);
   };
 
   const keys = getProviderKeys(provider);
@@ -57,45 +70,48 @@ function ProviderKeyManager({ provider, label }: { provider: KeyProvider; label:
         </div>
         <button
           className="text-link text-xs"
-          onClick={() => setDraft('')}
-          aria-label="Clear new key input"
+          onClick={handleClearAll}
+          aria-label="Clear all keys"
         >
-          Clear
+          Clear all
         </button>
       </div>
 
       {keys.length > 0 ? (
-        <>
-          <div className="mb-3">
-            <label className="block text-xs font-medium mb-1">Active key</label>
-            <div className="flex space-x-3">
-              {keys.map((key, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    id={`key-${provider}-${index}`}
-                    name={`active-key-${provider}`}
-                    checked={activeIndex === index}
-                    onChange={() => handleSetActive(index)}
-                    className="h-4 w-4 text-amber-300"
-                  />
-                  <label
-                    htmlFor={`key-${provider}-${index}`}
-                    className="cursor-pointer text-sm select-none truncate"
-                    title={key}
-                  >
-                    {/* Mask the key: show first 4 and last 4 chars, middle as asterisks */}
-                    {key.length > 8
-                      ? `${key.slice(0, 4)}${'*'.repeat(key.length - 8)}${key.slice(
-                          -4
-                        )}`
-                      : key}
-                  </label>
-                </div>
-              ))}
+        <div className="mb-3 space-y-2">
+          <label className="block text-xs font-medium">Saved keys</label>
+          {keys.map((key, index) => (
+            <div key={index} className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#172034] px-3 py-2">
+              <input
+                type="radio"
+                id={`key-${provider}-${index}`}
+                name={`active-key-${provider}`}
+                checked={activeIndex === index}
+                onChange={() => handleSetActive(index)}
+                className="h-4 w-4 shrink-0 text-amber-300"
+              />
+              <label
+                htmlFor={`key-${provider}-${index}`}
+                className="flex-1 cursor-pointer truncate text-xs text-slate-300"
+                title={key}
+              >
+                {key.length > 8
+                  ? `${key.slice(0, 4)}${'•'.repeat(Math.min(key.length - 8, 20))}${key.slice(-4)}`
+                  : key}
+              </label>
+              {activeIndex === index && (
+                <span className="shrink-0 text-[9px] text-amber-300">active</span>
+              )}
+              <button
+                onClick={() => handleRemoveKey(index)}
+                aria-label={`Remove key ${index + 1}`}
+                className="shrink-0 text-slate-400 hover:text-red-300"
+              >
+                <Trash2 size={14} />
+              </button>
             </div>
-          </div>
-        </>
+          ))}
+        </div>
       ) : (
         <p className="text-xs text-slate-400">No keys added yet.</p>
       )}
@@ -123,7 +139,7 @@ function ProviderKeyManager({ provider, label }: { provider: KeyProvider; label:
           className="amber-button w-full"
           disabled={!draft.trim()}
         >
-          {draft.trim() ? 'Add key' : 'Add key'}
+          Add key
         </Button>
       </form>
     </section>
@@ -138,26 +154,19 @@ export function FujiIntegrations() {
         Your API keys · No access password
       </h2>
       <p className="mt-3 text-sm leading-6 text-slate-300">
-        Add multiple keys for each provider below. Select which key to use for each provider.
-        Choose an AI provider in chat, or use Tavily in News & Research. Each request uses
-        only your selected key—there is no separate password to unlock.
+        Add keys for each provider below. Select which key to use. Choose an AI provider in chat, or use Tavily in News &amp; Research.
       </p>
-      <div className="mt-5 space-y-4">
+      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <ProviderKeyManager provider="openrouter" label="OpenRouter" />
         <ProviderKeyManager provider="mistral" label="Mistral" />
         <ProviderKeyManager provider="groq" label="Groq" />
         <ProviderKeyManager provider="tavily" label="Tavily · Research & news" />
       </div>
-      <div className="mt-5 rounded-xl border border-amber-300/15 bg-amber-300/5 p-4 text-xs leading-6 text-amber-100">
-        Keys remain only in this page session’s memory, not browser storage, workspace exports,
-        or source files. Refreshing closes the session and removes them. Keys travel through
-        this app’s server to the selected provider; use HTTPS and a trusted deployment.
-        Provider usage may incur charges. Use rotated keys, not keys previously posted in chat.
+      <div className="mt-5 rounded-xl border border-amber-300/15 bg-amber-300/5 p-4 text-[11px] leading-5 text-amber-100">
+        Keys remain only in this page session’s memory, not browser storage, workspace exports, or source files. Refreshing closes the session and removes them. Keys travel through this app’s server to the selected provider; use HTTPS and a trusted deployment. Provider usage may incur charges.
       </div>
-      <p className="mt-4 text-xs leading-6 text-slate-400">
-        FreeNewsAPI: documentation lookup was denied, so the exact endpoint is not verified.
-        Share its documentation URL to enable the correct adapter. Tavily already supports news
-        search. Accounts, cloud saves, and coin purchases remain disabled without a database.
+      <p className="mt-4 text-[11px] leading-5 text-slate-400">
+        Tavily supports news and research search. Accounts, cloud saves, and coin purchases remain disabled without a database.
       </p>
     </section>
   );
