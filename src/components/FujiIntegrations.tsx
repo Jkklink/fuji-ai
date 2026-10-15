@@ -160,6 +160,7 @@ export function FujiIntegrations() {
         <ProviderKeyManager provider="openrouter" label="OpenRouter" />
         <ProviderKeyManager provider="mistral" label="Mistral" />
         <ProviderKeyManager provider="groq" label="Groq" />
+        <ProviderKeyManager provider="google" label="Google · Gemini" />
         <ProviderKeyManager provider="tavily" label="Tavily · Research & news" />
       </div>
       <div className="mt-5 rounded-xl border border-amber-300/15 bg-amber-300/5 p-4 text-[11px] leading-5 text-amber-100">

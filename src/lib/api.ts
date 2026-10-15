@@ -1,4 +1,4 @@
-export type Provider = 'openrouter' | 'mistral' | 'groq';
+export type Provider = 'openrouter' | 'mistral' | 'groq' | 'google';
 export type KeyProvider = Provider | 'tavily';
 
 const keys: Partial<Record<KeyProvider, string[]>> = {};
@@ -67,7 +67,7 @@ export function getProviderKeyCount(provider: KeyProvider): number {
 }
 
 export function pickAvailableProvider(): Provider | undefined {
-  const order: Provider[] = ['openrouter', 'groq', 'mistral'];
+  const order: Provider[] = ['openrouter', 'groq', 'mistral', 'google'];
   for (const p of order) {
     if (hasProviderKey(p)) return p;
   }

@@ -7,7 +7,7 @@ import { maturityInstructions, relationshipInstructions, violenceInstructions, p
 import { characters } from '../../../src/lib/fuji';
 
 const schema = z.object({
-  provider: z.enum(['openrouter', 'mistral', 'groq']),
+  provider: z.enum(['openrouter', 'mistral', 'groq', 'google']),
   maturity: z.enum(['sfw', 'mature']).default('sfw'),
   members: z.array(z.enum(['sanji', 'yuki', 'kakashi', 'yuno'])).min(1).max(4),
   messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().min(1).max(20000) })).min(1).max(30),
@@ -50,9 +50,10 @@ export default defineHandler(async event => {
   if (!parsed.success) throw createError({ statusCode: 400, statusMessage: 'Invalid chat request.' });
   const body = parsed.data;
   const providers = {
-    openrouter: { url: 'https://openrouter.ai/api/v1/chat/completions', key: config.key, model: config.openrouterModel },
-    mistral: { url: 'https://api.mistral.ai/v1/chat/completions', key: config.key, model: config.mistralModel },
-    groq: { url: 'https://api.groq.com/openai/v1/chat/completions', key: config.key, model: config.groqModel },
+    openrouter: { url: 'https://openrouter.ai/api/v1/chat/completions', key: config.key, model: config.openrouterModel, format: 'openai' as const },
+    mistral: { url: 'https://api.mistral.ai/v1/chat/completions', key: config.key, model: config.mistralModel, format: 'openai' as const },
+    groq: { url: 'https://api.groq.com/openai/v1/chat/completions', key: config.key, model: config.groqModel, format: 'openai' as const },
+    google: { url: `https://generativelanguage.googleapis.com/v1beta/models/${config.googleModel}:generateContent`, key: config.key, model: config.googleModel, format: 'google' as const },
   };
   const provider = providers[body.provider];
   const speaker = body.speaker || body.members[0];
@@ -123,11 +124,18 @@ export default defineHandler(async event => {
   ].filter(Boolean).join('\n');
 
   let response: Response;
-  try { response = await fetch(provider.url, { method: 'POST', headers: { Authorization: `Bearer ${provider.key}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: provider.model, messages: [{ role: 'system', content: system }, ...body.messages], max_tokens: 1600, temperature: 0.8 }), signal: AbortSignal.timeout(60_000) }); }
+  try {
+    if (provider.format === 'google') {
+      const contents = body.messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+      response = await fetch(`${provider.url}?key=${encodeURIComponent(provider.key)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ system_instruction: { parts: [{ text: system }] }, contents, generationConfig: { maxOutputTokens: 1600, temperature: 0.8 } }), signal: AbortSignal.timeout(60_000) });
+    } else {
+      response = await fetch(provider.url, { method: 'POST', headers: { Authorization: `Bearer ${provider.key}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: provider.model, messages: [{ role: 'system', content: system }, ...body.messages], max_tokens: 1600, temperature: 0.8 }), signal: AbortSignal.timeout(60_000) });
+    }
+  }
   catch { throw createError({ statusCode: 504, statusMessage: 'Provider timed out. Your message is saved; retry the reply.' }); }
   if (!response.ok) throw createError({ statusCode: response.status === 429 ? 429 : 502, statusMessage: response.status === 429 ? 'Provider rate limit reached. Try again later.' : 'Provider rejected the request. Check your API key in Settings, model availability, and provider billing.' });
   const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
+  const content = provider.format === 'google' ? data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text).filter(Boolean).join('\n') : data.choices?.[0]?.message?.content;
   if (typeof content !== 'string' || !content.trim()) throw createError({ statusCode: 502, statusMessage: 'Provider returned no reply.' });
   return { content: content.slice(0, 20000), character: speaker, provider: body.provider, maturity: body.maturity };
 });
